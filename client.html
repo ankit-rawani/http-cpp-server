@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP C++ Server - API Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        h2 {
+            color: #555;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+        }
+
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+
+        .response {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 3px;
+            padding: 10px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .server-status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .status-online {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-offline {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .flex-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .flex-item {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .file-list {
+            margin-top: 10px;
+        }
+
+        .file-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .config {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>HTTP C++ Server - API Client</h1>
+
+    <div class="config">
+        <h3>Server Configuration</h3>
+        <div class="form-group">
+            <label for="serverUrl">Server URL:</label>
+            <input type="text" id="serverUrl" value="http://localhost:8080">
+        </div>
+        <button onclick="checkServerStatus()">Check Server Status</button>
+        <div id="serverStatus" class="server-status" style="display: none;"></div>
+    </div>
+
+    <div class="flex-container">
+        <!-- CRUD Operations -->
+        <div class="flex-item">
+            <div class="container">
+                <h2>CRUD Operations</h2>
+
+                <div class="form-group">
+                    <label for="collection">Collection:</label>
+                    <input type="text" id="collection" value="users" placeholder="e.g., users, products">
+                </div>
+
+                <h3>Create Item</h3>
+                <div class="form-group">
+                    <label for="createData">Item Data (JSON):</label>
+                    <textarea id="createData" rows="3" placeholder='{"name": "John Doe", "email": "john@example.com"}'></textarea>
+                </div>
+                <button onclick="createItem()">Create Item</button>
+                <div id="createResponse" class="response" style="display: none;"></div>
+
+                <h3>Read Operations</h3>
+                <button onclick="getAllItems()">Get All Items</button>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label for="itemId">Item ID:</label>
+                    <input type="text" id="itemId" placeholder="Enter item ID">
+                </div>
+                <button onclick="getItem()">Get Item by ID</button>
+                <div id="readResponse" class="response" style="display: none;"></div>
+
+                <h3>Update Item</h3>
+                <div class="form-group">
+                    <label for="updateId">Item ID to Update:</label>
+                    <input type="text" id="updateId" placeholder="Enter item ID">
+                </div>
+                <div class="form-group">
+                    <label for="updateData">Updated Data (JSON):</label>
+                    <textarea id="updateData" rows="3" placeholder='{"name": "Jane Doe", "email": "jane@example.com"}'></textarea>
+                </div>
+                <button onclick="updateItem()">Update Item</button>
+                <div id="updateResponse" class="response" style="display: none;"></div>
+
+                <h3>Delete Item</h3>
+                <div class="form-group">
+                    <label for="deleteId">Item ID to Delete:</label>
+                    <input type="text" id="deleteId" placeholder="Enter item ID">
+                </div>
+                <button onclick="deleteItem()" class="delete-btn">Delete Item</button>
+                <div id="deleteResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- File Operations -->
+        <div class="flex-item">
+            <div class="container">
+                <h2>File Operations</h2>
+
+                <h3>Upload File</h3>
+                <div class="form-group">
+                    <label for="fileInput">Select File:</label>
+                    <input type="file" id="fileInput">
+                </div>
+                <button onclick="uploadFile()">Upload File</button>
+                <div id="uploadResponse" class="response" style="display: none;"></div>
+
+                <h3>File Management</h3>
+                <button onclick="listFiles()">List Files</button>
+                <div id="fileListResponse" class="response" style="display: none;"></div>
+                <div id="fileList" class="file-list"></div>
+
+                <h3>Download File</h3>
+                <div class="form-group">
+                    <label for="downloadFilename">Filename:</label>
+                    <input type="text" id="downloadFilename" placeholder="Enter filename">
+                </div>
+                <button onclick="downloadFile()">Download File</button>
+                <div id="downloadResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Data Section -->
+    <div class="container">
+        <h2>Quick Test Data</h2>
+        <p>Use these buttons to quickly populate test data:</p>
+        <button onclick="loadSampleUsers()">Load Sample Users</button>
+        <button onclick="loadSampleProducts()">Load Sample Products</button>
+        <button onclick="clearAllData()" class="delete-btn">Clear All Data (Restart Server)</button>
+        <div id="testDataResponse" class="response" style="display: none;"></div>
+    </div>
+
+    <script>
+        let serverUrl = 'http://localhost:8080';
+
+        // Update server URL when changed
+        document.getElementById('serverUrl').addEventListener('change', function() {
+            serverUrl = this.value.replace(/\/$/, ''); // Remove trailing slash
+        });
+
+        function showResponse(elementId, data, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `response ${isSuccess ? 'success' : 'error'}`;
+            element.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        }
+
+        function hideResponse(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, options);
+                const contentType = response.headers.get('content-type');
+
+                let data;
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+
+                return {
+                    success: response.ok,
+                    status: response.status,
+                    data: data
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    status: 0,
+                    data: `Network Error: ${error.message}`
+                };
+            }
+        }
+
+        async function checkServerStatus() {
+            const result = await makeRequest(`${serverUrl}/api/data/test`);
+            const statusElement = document.getElementById('serverStatus');
+            statusElement.style.display = 'block';
+
+            if (result.success || result.status !== 0) {
+                statusElement.className = 'server-status status-online';
+                statusElement.textContent = '✓ Server is online and responding';
+            } else {
+                statusElement.className = 'server-status status-offline';
+                statusElement.textContent = '✗ Server is offline or unreachable';
+            }
+        }
+
+        // CRUD Operations
+        async function createItem() {
+            const collection = document.getElementById('collection').value;
+            const data = document.getElementById('createData').value;
+
+            if (!collection || !data) {
+                showResponse('createResponse', 'Please enter collection name and item data', false);
+                return;
+            }
+
+            try {
+                const jsonData = JSON.parse(data);
+                const result = await makeRequest(`${serverUrl}/api/data/${collection}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonData)
+                });
+
+                showResponse('createResponse', result.data, result.success);
+            } catch (error) {
+                showResponse('createResponse', `Invalid JSON: ${error.message}`, false);
+            }
+        }
+
+        async function getAllItems() {
+            const collection = document.getElementById('collection').value;
+
+            if (!collection) {
+                showResponse('readResponse', 'Please enter collection name', false);
+                return;
+            }
+
+            const result = await makeRequest(`${serverUrl}/api/data/${collection}`);
+            showResponse('readResponse', result.data, result.success);
+        }
+
+        async function getItem() {
+            const collection = document.getElementById('collection').value;
+            const itemId = document.getElementById('itemId').value;
+
+            if (!collection || !itemId) {
+                showResponse('readResponse', 'Please enter collection name and item ID', false);
+                return;
+            }
+
+            const result = await makeRequest(`${serverUrl}/api/data/${collection}/${itemId}`);
+            showResponse('readResponse', result.data, result.success);
+        }
+
+        async function updateItem() {
+            const collection = document.getElementById('collection').value;
+            const itemId = document.getElementById('updateId').value;
+            const data = document.getElementById('updateData').value;
+
+            if (!collection || !itemId || !data) {
+                showResponse('updateResponse', 'Please enter collection name, item ID, and update data', false);
+                return;
+            }
+
+            try {
+                const jsonData = JSON.parse(data);
+                const result = await makeRequest(`${serverUrl}/api/data/${collection}/${itemId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonData)
+                });
+
+                showResponse('updateResponse', result.data, result.success);
+            } catch (error) {
+                showResponse('updateResponse', `Invalid JSON: ${error.message}`, false);
+            }
+        }
+
+        async function deleteItem() {
+            const collection = document.getElementById('collection').value;
+            const itemId = document.getElementById('deleteId').value;
+
+            if (!collection || !itemId) {
+                showResponse('deleteResponse', 'Please enter collection name and item ID', false);
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete item ${itemId} from ${collection}?`)) {
+                return;
+            }
+
+            const result = await makeRequest(`${serverUrl}/api/data/${collection}/${itemId}`, {
+                method: 'DELETE'
+            });
+
+            showResponse('deleteResponse', result.data, result.success);
+        }
+
+        // File Operations
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showResponse('uploadResponse', 'Please select a file', false);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const result = await makeRequest(`${serverUrl}/api/files/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            showResponse('uploadResponse', result.data, result.success);
+
+            // Refresh file list if upload was successful
+            if (result.success) {
+                setTimeout(listFiles, 500);
+            }
+        }
+
+        async function listFiles() {
+            const result = await makeRequest(`${serverUrl}/api/files`);
+            showResponse('fileListResponse', result.data, result.success);
+
+            // Display files in a nice list
+            if (result.success && result.data.files) {
+                const fileListDiv = document.getElementById('fileList');
+                fileListDiv.innerHTML = '';
+
+                if (result.data.files.length === 0) {
+                    fileListDiv.innerHTML = '<p>No files uploaded yet.</p>';
+                } else {
+                    result.data.files.forEach(filename => {
+                        const fileItem = document.createElement('div');
+                        fileItem.className = 'file-item';
+                        fileItem.innerHTML = `
+                            <span>${filename}</span>
+                            <button onclick="downloadFileByName('${filename}')">Download</button>
+                        `;
+                        fileListDiv.appendChild(fileItem);
+                    });
+                }
+            }
+        }
+
+        async function downloadFile() {
+            const filename = document.getElementById('downloadFilename').value;
+
+            if (!filename) {
+                showResponse('downloadResponse', 'Please enter filename', false);
+                return;
+            }
+
+            downloadFileByName(filename);
+        }
+
+        async function downloadFileByName(filename) {
+            try {
+                const response = await fetch(`${serverUrl}/api/files/download/${filename}`);
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    showResponse('downloadResponse', `File '${filename}' downloaded successfully`, true);
+                } else {
+                    const errorText = await response.text();
+                    showResponse('downloadResponse', errorText, false);
+                }
+            } catch (error) {
+                showResponse('downloadResponse', `Download failed: ${error.message}`, false);
+            }
+        }
+
+        // Test Data Functions
+        async function loadSampleUsers() {
+            const users = [
+                {name: "John Doe", email: "john@example.com", age: "30"},
+                {name: "Jane Smith", email: "jane@example.com", age: "25"},
+                {name: "Bob Johnson", email: "bob@example.com", age: "35"},
+                {name: "Alice Brown", email: "alice@example.com", age: "28"}
+            ];
+
+            let results = [];
+            for (const user of users) {
+                const result = await makeRequest(`${serverUrl}/api/data/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(user)
+                });
+                results.push(`User ${user.name}: ${result.success ? 'Created' : 'Failed'}`);
+            }
+
+            showResponse('testDataResponse', results.join('\n'), true);
+        }
+
+        async function loadSampleProducts() {
+            const products = [
+                {name: "Laptop", price: "999", category: "Electronics"},
+                {name: "Smartphone", price: "599", category: "Electronics"},
+                {name: "Coffee Mug", price: "15", category: "Home"},
+                {name: "Book", price: "25", category: "Education"}
+            ];
+
+            let results = [];
+            for (const product of products) {
+                const result = await makeRequest(`${serverUrl}/api/data/products`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(product)
+                });
+                results.push(`Product ${product.name}: ${result.success ? 'Created' : 'Failed'}`);
+            }
+
+            showResponse('testDataResponse', results.join('\n'), true);
+        }
+
+        function clearAllData() {
+            showResponse('testDataResponse', 'To clear all data, restart the server. Data is stored in memory only.', true);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServerStatus();
+
+            // Set some default values
+            document.getElementById('createData').value = '{"name": "John Doe", "email": "john@example.com", "age": "30"}';
+            document.getElementById('updateData').value = '{"name": "Jane Doe", "email": "jane@example.com", "age": "31"}';
+        });
+    </script>
+</body>
+</html>
